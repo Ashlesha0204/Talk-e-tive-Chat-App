@@ -6,7 +6,7 @@ import { IconButton, Spinner, useToast } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { ArrowBackIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, ArrowRightIcon } from "@chakra-ui/icons";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
@@ -22,6 +22,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
@@ -71,8 +72,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
 
   const sendMessage = async (event) => {
-    if (event.key === "Enter" && newMessage) {
+    if ((event.key === "Enter" || event === "button") && newMessage && !sending) {
       socket.emit("stop typing", selectedChat._id);
+      setSending(true);
       try {
         const config = {
           headers: {
@@ -92,14 +94,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
+        console.error("Send message error:", error);
         toast({
           title: "Error Occured!",
-          description: "Failed to send the Message",
+          description: error?.response?.data?.message || "Failed to send the Message",
           status: "error",
           duration: 5000,
           isClosable: true,
           position: "bottom",
         });
+      } finally {
+        setSending(false);
       }
     }
   };
@@ -226,6 +231,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               id="first-name"
               isRequired
               mt={3}
+              d="flex"
             >
               {istyping ? (
                 <div>
@@ -245,6 +251,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 placeholder="Enter a message.."
                 value={newMessage}
                 onChange={typingHandler}
+                isDisabled={sending}
+                mr={2}
+              />
+              <IconButton
+                colorScheme="blue"
+                icon={<ArrowRightIcon />}
+                isLoading={sending}
+                isDisabled={sending || !newMessage}
+                onClick={() => sendMessage("button")}
+                aria-label="Send Message"
               />
             </FormControl>
           </Box>

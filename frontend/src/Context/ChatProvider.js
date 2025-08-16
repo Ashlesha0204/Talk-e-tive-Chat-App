@@ -11,11 +11,26 @@ const ChatProvider = ({ children }) => {
 
   const history = useHistory();
 
+  // Function to clear all state
+  const clearState = () => {
+    setSelectedChat();
+    setNotification([]);
+    setChats();
+  };
+
+  // Function to set user and clear previous state
+  const setUserAndClearState = (userData) => {
+    clearState();
+    setUser(userData);
+  };
+
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-    setUser(userInfo);
-
-    if (!userInfo) history.push("/");
+    if (userInfo) {
+      setUser(userInfo);
+    } else {
+      history.push("/");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history]);
 
@@ -25,11 +40,12 @@ const ChatProvider = ({ children }) => {
         selectedChat,
         setSelectedChat,
         user,
-        setUser,
+        setUser: setUserAndClearState,
         notification,
         setNotification,
         chats,
         setChats,
+        clearState,
       }}
     >
       {children}
